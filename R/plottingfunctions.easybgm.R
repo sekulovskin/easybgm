@@ -10,7 +10,7 @@ get_cluster_colors <- function(easybgm_object) {
   }
   
   
-  if(!all(is.na(easybgm_object$cluster_allocations)) &&  length(unique(easybgm_object$cluster_allocations)) > 1){
+  if (!all(is.na(easybgm_object$cluster_allocations)) && length(unique(easybgm_object$cluster_allocations)) > 1) {
     n <- length(unique(easybgm_object$cluster_allocations))
     
     # OkabeIto is a color blind palette, it works with up to 9 colors
