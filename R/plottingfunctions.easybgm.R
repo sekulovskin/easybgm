@@ -1,4 +1,4 @@
-#' @keywords internal   # optional – silences “undocumented” NOTE in R CMD check
+#' @keywords internal
 get_cluster_colors <- function(easybgm_object) {
   random_hcl <- function(n,
                          c_range = c(55, 80),   
