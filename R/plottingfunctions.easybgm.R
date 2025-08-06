@@ -127,7 +127,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
   }
   if(is.null(output$inc_probs)){
     stop("The model was fitted without edge selection and no inclusion probabilities were obtained. Therefore, the plot cannot be obtained. Run the model with edge_selection set to TRUE.",
-            call. = FALSE)
+         call. = FALSE)
   }
   if(output$model == "dgm-binary"){
     default_args <- list(
@@ -155,7 +155,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
       legend.cex = .6
     )
   }
-
+  
   args <- set_defaults(default_args, ...)
   graph <- output$inc_BF
   diag(graph) <- 1
@@ -166,6 +166,8 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
                          graph_color <- args$colors[3], graph_color <- args$colors[1])
   graph_color[graph < (1/evidence_thresh)] <- args$colors[2]
   
+  cluster_color <- get_cluster_colors(output$cluster_allocations)
+  
   if (show == "all") {
     if (!split) {
       graph[output$inc_probs <= 1] <- 1
@@ -173,6 +175,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
       colnames(graph) <- args$colnames
       qgraph_plot <- qgraph::qgraph(graph,
                                     edge.color = graph_color,
+                                    color = cluster_color,
                                     layout = args$layout,# specifies the color of the edges
                                     theme = args$theme,
                                     vsize = args$vsize,
@@ -195,6 +198,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
       colnames(graph_inc) <- colnames(output$parameters)
       qgraph_plot1 <- qgraph::qgraph(graph_inc,
                                      edge.color = graph_color,
+                                     color = cluster_color,
                                      layout = args$layout,# specifies the color of the edges
                                      theme = args$theme,
                                      vsize = args$vsize,
@@ -212,6 +216,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
       colnames(graph_exc) <- colnames(output$parameters)
       qgraph_plot2 <- qgraph::qgraph(graph_exc,
                                      edge.color = graph_color,
+                                     color = cluster_color,
                                      # specifies the color of the edges
                                      layout = args$layout,# specifies the color of the edges
                                      theme = args$theme,
@@ -236,11 +241,12 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
     if("inconclusive" %in% show){
       graph_show[(output$inc_BF > (1/evidence_thresh)) & (output$BF < evidence_thresh)] <- 1
     }
-
+    
     diag(graph_show) <- 1
     colnames(graph_show) <- colnames(output$parameters)
     qgraph_plot <- qgraph::qgraph(graph_show,
                                   edge.color = graph_color,
+                                  color = cluster_color,
                                   layout = args$layout,# specifies the color of the edges
                                   theme = args$theme,
                                   vsize = args$vsize,
@@ -251,7 +257,7 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
                                   ...
     )
   }
-
+  
   if (split == TRUE) {
     return(invisible(list(qgraph_plot1, qgraph_plot2)))
   } else {
@@ -264,7 +270,6 @@ plot_edgeevidence.easybgm <- function(output, evidence_thresh = 10, split = FALS
 
 #' @export
 plot_network.easybgm <- function(output, exc_prob = 0.5, evidence_thresh = 10,  dashed = FALSE, ...) {
-  
   if(!any(class(output) == "easybgm")){
     stop("Wrong input provided. The function requires as input the output of the easybgm function.")
   }
@@ -275,9 +280,8 @@ plot_network.easybgm <- function(output, exc_prob = 0.5, evidence_thresh = 10,  
   if(is.null(output$inc_probs) & dashed == TRUE){
     dashed <- FALSE
     warning("The model was fitted without edge selection and no inclusion probabilities were obtained. Therefore, edges cannot be dashed according to their PIP.",
-         call. = FALSE)
+            call. = FALSE)
   }
-
   
   graph <- output$parameters
   default_args <- list(
@@ -292,18 +296,21 @@ plot_network.easybgm <- function(output, exc_prob = 0.5, evidence_thresh = 10,  
     edge.labels = FALSE
   )
   args <- set_defaults(default_args, ...)
-
+  
   # Exclude edges with an inclusion probability lower than exc_prob
   inc_probs_m <- output$inc_probs
   graph[inc_probs_m < exc_prob] <- 0
   diag(graph) <- 1
-
+  
+  
+  cluster_colors <- get_cluster_colors(output$cluster_allocations)
   # Plot
   if(dashed){
     graph_dashed <- ifelse(output$inc_BF < args$evidence_thresh, 2, 1)
-
+    
     
     qgraph_plot <- qgraph::qgraph(graph, layout = args$layout, 
+                                  color = cluster_colors,
                                   lty = graph_dashed,
                                   theme = args$theme, vsize = args$vsize,
                                   nodeNames = args$nodeNames,
@@ -314,6 +321,7 @@ plot_network.easybgm <- function(output, exc_prob = 0.5, evidence_thresh = 10,  
   } else {
     qgraph_plot <- qgraph::qgraph(graph, theme = args$theme, 
                                   layout = args$layout, vsize = args$vsize,
+                                  color = cluster_colors,
                                   nodeNames = args$nodeNames,
                                   legend = args$legend,
                                   label.cex = args$label.cex,
@@ -473,8 +481,8 @@ plot_centrality.easybgm <- function(output, ...){
 # -------------------------------------------------------------------------------
 #' @export
 plot_prior_sensitivity.list <- function(output,
-                                           evidence_thres = 10, ...) {
-
+                                        evidence_thres = 10, ...) {
+  
   default_args <- list(
     theme_ = theme_minimal(),
     ylab = ylab("Relative no. edges"),
@@ -492,7 +500,7 @@ plot_prior_sensitivity.list <- function(output,
       plot.title = element_text(size = 18, face = "bold"),
       panel.grid.major = element_blank(),
       legend.text = element_text(size = 12),
-
+      
     ),
     colors = c("#36648b", "#990000", "#bfbfbf"),
     size = 1
@@ -521,7 +529,7 @@ plot_prior_sensitivity.list <- function(output,
     }
     edge_priors[i] <- res$edge.prior
     
-  
+    
     incl_bf <- res$inc_BF
     incl_bf <- incl_bf[lower.tri(incl_bf)]
     

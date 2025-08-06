@@ -158,6 +158,8 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
     stop("The plot cannot be obtained for this model fit as no posterior edge inclusion probabilities were obtained. Rerun the model fit and set 'edge_selection = TRUE'.")
   }
 
+  cluster_colors <- get_cluster_colors(output$allocations)
+  
   res <- bgm_extract.package_bgms(fit = output, save = fit_args$save, centrality = FALSE,
                                   type = NULL, not_cont = NULL, data = NULL,
                                   edge_prior = fit_args$edge_prior,
@@ -184,13 +186,13 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
   args <- set_defaults(default_args, ...)
   graph <- output$inc_BF
   diag(graph) <- 1
-
   # assign a color to each edge (inclusion - blue, exclusion - red, no conclusion - grey)
   graph_color <- graph
   graph_color <-  ifelse(graph < evidence_thresh & graph > 1/evidence_thresh,
                          graph_color <- args$colors[3], graph_color <- args$colors[1])
   graph_color[graph < (1/evidence_thresh)] <- args$colors[2]
-
+ 
+  
   if (show == "all") {
     if (!split) {
       graph[output$inc_probs <= 1] <- 1
@@ -198,6 +200,7 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
       colnames(graph) <- args$colnames
       qgraph_plot <- qgraph::qgraph(graph,
                                     edge.color = graph_color,
+                                    color = cluster_colors,
                                     layout = args$layout,# specifies the color of the edges
                                     theme = args$theme,
                                     vsize = args$vsize,
@@ -220,6 +223,7 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
       colnames(graph_inc) <- colnames(output$parameters)
       qgraph_plot1 <- qgraph::qgraph(graph_inc,
                                      edge.color = graph_color,
+                                     color = cluster_colors,
                                      layout = args$layout,# specifies the color of the edges
                                      theme = args$theme,
                                      vsize = args$vsize,
@@ -238,6 +242,7 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
       qgraph_plot2 <- qgraph::qgraph(graph_exc,
                                      edge.color = graph_color,
                                      # specifies the color of the edges
+                                     color = cluster_colors,
                                      layout = args$layout,# specifies the color of the edges
                                      theme = args$theme,
                                      vsize = args$vsize,
@@ -265,6 +270,7 @@ plot_edgeevidence.bgms <- function(output, evidence_thresh = 10, split = FALSE, 
     colnames(graph_show) <- colnames(output$parameters)
     qgraph_plot <- qgraph::qgraph(graph_show,
                                   edge.color = graph_color,
+                                  color = cluster_colors,
                                   layout = args$layout,# specifies the color of the edges
                                   theme = args$theme,
                                   vsize = args$vsize,
@@ -291,6 +297,8 @@ plot_network.bgms <- function(output, exc_prob = .5, evidence_thresh = 10, dashe
     stop("Your version of the package bgms is not supported anymore. Please update.")
   }
 
+  cluster_colors <- get_cluster_colors(output$allocations)
+  
   fit_args <- bgms::extract_arguments(output)
 
   res <- bgm_extract.package_bgms(fit = output, save = fit_args$save, centrality = FALSE,
@@ -325,11 +333,12 @@ plot_network.bgms <- function(output, exc_prob = .5, evidence_thresh = 10, dashe
   inc_probs_m <- output$inc_probs
   graph[inc_probs_m < exc_prob] <- 0
   diag(graph) <- 1
-
+  
   # Plot
   if(dashed){
     graph_dashed <- ifelse(output$inc_BF < args$evidence_thres, "dashed", "solid")
     qgraph_plot <- qgraph::qgraph(graph, layout = args$layout, lty = graph_dashed,
+                                  color = cluster_colors,
                                   theme = args$theme, vsize = args$vsize,
                                   nodeNames = args$nodeNames,
                                   legend = args$legend,
@@ -338,6 +347,7 @@ plot_network.bgms <- function(output, exc_prob = .5, evidence_thresh = 10, dashe
   } else {
     qgraph_plot <- qgraph::qgraph(graph, theme = args$theme,
                                   layout = args$layout, vsize = args$vsize,
+                                  color = cluster_colors,
                                   nodeNames = args$nodeNames,
                                   legend = args$legend,
                                   label.cex = args$label.cex,

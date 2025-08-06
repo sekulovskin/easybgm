@@ -320,3 +320,38 @@ extract_indicators <- function(bgms_object) {
                 "edge_selection = TRUE and save = TRUE."))
   }
 }
+
+# This function returns cluster colors for plots
+# input: cluster allocations (null or numeric vector)
+# output: a vector of colors for each vertex
+get_cluster_colors <- function(cluster_allocations) {
+  random_hcl <- function(n,
+                         c_range = c(55, 80),   
+                         l_range = c(45, 75)) { 
+    h <- runif(n, 0, 360)                     
+    c <- runif(n, c_range[1], c_range[2])
+    l <- runif(n, l_range[1], l_range[2])
+    hcl(h, c, l)
+  }
+  
+  
+  if (!all(is.na(cluster_allocations)) && length(unique(cluster_allocations)) > 1) {
+    n <- length(unique(cluster_allocations))
+    
+    # OkabeIto is a color blind palette, it works with up to 9 colors
+    if (n <= 9) {
+      colors <- palette.colors(n, "OkabeIto")
+      
+    } else {
+      # This supports the (uncommon) cases with 10+ clusters
+      colors <- random_hcl(n)  
+    }
+    
+    return( sapply(cluster_allocations, function(X) colors[X]))
+    
+  } else {
+    return(c())
+  }
+  
+}
+
