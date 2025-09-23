@@ -71,7 +71,14 @@ the function will also return return:
 \item \code{cluster_probabilities} A matrix with the estimated posterior
 probability of the number of components (clusters) in the network.
 
-\item \code{cluster_allocations} A vector with the estimated cluster assignments of the variables.
+\item \code{cluster_allocations_mean} The posterior mean vector estimated cluster assignments of the variables.
+
+\item \code{cluster_allocations_mode} The posterior mode vector estimated cluster assignments of the variables.
+
+\item \code{coclustering_matrix} a symmetric matrix of
+pairwise proportions of occurrence of every variable. This matrix
+can be plotted to visually inspect the estimated number of clusters
+and visually inspect nodes that tend to switch clusters.
 
 }
 

@@ -24,7 +24,7 @@ required for \code{type = "simple"}.}
 A numeric value representing the Bayes factor.
 }
 \description{
-This function calculates Bayes factors to evaluate evidence inf favor of
+This function calculates Bayes factors to evaluate evidence in favor of
 clustering for models fitted with the \code{bgms} packae with
 \code{edge_prior = "Stochastic-Block"}. It supports two types of calculations:
 simple Bayes factors between two hypothesized number of clusters (\code{b1} and \code{b2}),

@@ -16,7 +16,6 @@ bgm_fit.package_bgms <- function(fit, type, data, iter, save,
                 ...))
   )
 
-
   fit$model <- type
   fit$packagefit <- bgms_fit
   if(is.null(colnames(data))){
@@ -63,12 +62,12 @@ bgm_extract.package_bgms <- function(fit, type, save,
     if(packageVersion("bgms") < "0.1.4"){
       pars <- extract_pairwise_interactions(fit)
     } else {
-      pars <- extract_pairwise_interactions(fit)}
+      pars <- bgms::extract_pairwise_interactions(fit)}
     bgms_res$parameters <- vector2matrix(colMeans(pars), p = p)
     if(packageVersion("bgms") < "0.1.4"){
       bgms_res$thresholds <- bgms::extract_pairwise_thresholds(fit)
     } else {
-      bgms_res$thresholds <- extract_category_thresholds(fit)}
+      bgms_res$thresholds <- bgms::extract_category_thresholds(fit)}
     colnames(bgms_res$parameters) <- varnames
     bgms_res$structure <- matrix(1, ncol = ncol(bgms_res$parameters),
                                  nrow = nrow(bgms_res$parameters))
@@ -80,24 +79,25 @@ bgm_extract.package_bgms <- function(fit, type, save,
       if(packageVersion("bgms") < "0.1.4"){
         gammas <- bgms::extract_edge_indicators(fit)
       } else {
-        gammas <- extract_indicators(fit)}
+        gammas <- bgms::extract_indicators(fit)}
       structures <- apply(gammas, 1, paste0, collapse="")
       table_structures <- as.data.frame(table(structures))
       bgms_res$structure_probabilities <- table_structures[,2]/nrow(gammas)
       bgms_res$graph_weights <- table_structures[,2]
       bgms_res$sample_graph <- as.character(table_structures[, 1])
       #EDGE SELECTION + SAVE
-      if (args$edge_prior[1] == "Stochastic-Block") {
-        extract_sbm <- summarySBM(fit)
-        bgms_res$cluster_probabilities <- extract_sbm$components
-        bgms_res$cluster_allocations <- extract_sbm$allocations
+      if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") == "0.1.5.0") {
+        bgms_res$cluster_probabilities <- fit$posterior_num_blocks
+        bgms_res$cluster_allocations_mean <- fit$posterior_mean_allocations
+        bgms_res$cluster_allocations_mode <- fit$posterior_mode_allocations
+        bgms_res$coclustering_matrix <- fit$posterior_coclustering_matrix
       }
     }
   } else {
     if(packageVersion("bgms") < "0.1.4"){
       bgms_res$parameters <- extract_pairwise_interactions(fit)
     } else {
-      bgms_res$parameters <- extract_pairwise_interactions(fit)}
+      bgms_res$parameters <- bgms::extract_pairwise_interactions(fit)}
     if(packageVersion("bgms") < "0.1.4"){
       bgms_res$thresholds <- bgms::extract_pairwise_thresholds(fit)
     } else {
@@ -109,9 +109,11 @@ bgm_extract.package_bgms <- function(fit, type, save,
       bgms_res$inc_probs <- bgms::extract_posterior_inclusion_probabilities(fit)
       bgms_res$inc_BF <- (bgms_res$inc_probs/(1-bgms_res$inc_probs))/(edge.prior /(1-edge.prior))
       bgms_res$structure <- 1*(bgms_res$inc_probs > 0.5)
-      if (args$edge_prior[1] == "Stochastic-Block") {
-        bgms_res$cluster_probabilities <- fit$components
-        bgms_res$cluster_allocations <- fit$allocations
+      if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") == "0.1.5.0") {
+        bgms_res$cluster_probabilities <- fit$posterior_num_blocks
+        bgms_res$cluster_allocations_mean <- fit$posterior_mean_allocations
+        bgms_res$cluster_allocations_mode <- fit$posterior_mode_allocations
+        bgms_res$coclustering_matrix <- fit$posterior_coclustering_matrix
       }
     }
 
@@ -120,7 +122,7 @@ bgm_extract.package_bgms <- function(fit, type, save,
     if(packageVersion("bgms") < "0.1.4"){
       bgms_res$samples_posterior <- extract_pairwise_interactions(fit)
     } else {
-      bgms_res$samples_posterior <- extract_pairwise_interactions(fit)}
+      bgms_res$samples_posterior <- bgms::extract_pairwise_interactions(fit)}
 
     if(centrality){
       bgms_res$centrality <- centrality(bgms_res)
@@ -141,12 +143,12 @@ bgm_extract.package_bgms <- function(fit, type, save,
 }
 
 # --------------------------------------------------------------------------------------------------
-# 3. Function for calulating Clustering Bayes factors for Stochastic Block Model
+# 3. Function for calculating Clustering Bayes factors for Stochastic Block Model
 # --------------------------------------------------------------------------------------------------
 #' Calculate Clustering Bayes Factors for when using the Stochastic Block Model
 #' as an edge prior
 #'
-#' This function calculates Bayes factors to evaluate evidence inf favor of
+#' This function calculates Bayes factors to evaluate evidence in favor of
 #' clustering for models fitted with the \code{bgms} packae with
 #' \code{edge_prior = "Stochastic-Block"}. It supports two types of calculations:
 #' simple Bayes factors between two hypothesized number of clusters (`b1` and `b2`),
@@ -177,8 +179,6 @@ clusterBayesfactor <- function(fit,
 
   # Check the class of fit (if it is a bgms object, rename components)
   if (inherits(fit, "bgms")) {
-    names(fit)[names(fit) == "components"] <- "cluster_probabilities"
-    names(fit)[names(fit) == "allocations"] <- "cluster_allocations"
     names(fit)[names(fit) == "arguments"] <- "fit_arguments"
   }
 
@@ -192,14 +192,14 @@ clusterBayesfactor <- function(fit,
     prO <- (lambda^(b1 - b2) * factorial(b2)) / factorial(b1)
 
     # Calculate the posterior odds in favor of b1 against b2
-    poO <-  unname(fit$cluster_probabilities[b1, 2]) / unname(fit$cluster_probabilities[b2, 2])
+    poO <-  unname(fit$cluster_probabilities[b1, 1]) / unname(fit$cluster_probabilities[b2, 1])
 
     bayesFactor <- poO / prO
 
   } else if (type == "complement") {
     # In favor of the complement
     prO <- (exp(lambda) - 1 - lambda) / lambda
-    poO <- sum(fit$cluster_probabilities[-1, 2]) / unname(fit$cluster_probabilities[1, 2])
+    poO <- sum(fit$cluster_probabilities[-1, 1]) / unname(fit$cluster_probabilities[1, 1])
     bayesFactor <- poO / prO
   }
 
