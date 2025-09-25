@@ -86,7 +86,7 @@ bgm_extract.package_bgms <- function(fit, type, save,
       bgms_res$graph_weights <- table_structures[,2]
       bgms_res$sample_graph <- as.character(table_structures[, 1])
       #EDGE SELECTION + SAVE
-      if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") == "0.1.5.0") {
+      if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") >= "0.1.6.0") {
         bgms_res$cluster_probabilities <- fit$posterior_num_blocks
         bgms_res$cluster_allocations_mean <- fit$posterior_mean_allocations
         bgms_res$cluster_allocations_mode <- fit$posterior_mode_allocations

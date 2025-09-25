@@ -46,7 +46,7 @@
 #' the function will also return return:
 #'   \itemize{
 #'
-#'    \item \code{cluster_probabilities} A matrix with the estimated posterior
+#'    \item \code{cluster_probabilities} A data frame with the estimated posterior
 #'    probability of the number of components (clusters) in the network.
 #'
 #'    \item \code{cluster_allocations_mean} The posterior mean vector estimated cluster assignments of the variables.
