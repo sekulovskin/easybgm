@@ -130,7 +130,7 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
   #clustering information
   if(!is.null(object$fit_arguments)) {
     if(!is.null(object$fit_arguments$edge_prior) && object$fit_arguments$edge_prior == "Stochastic-Block") {
-      out$cluster_probabilities <- as.data.frame(round(fit$cluster_probabilities, 3))
+      out$cluster_probabilities <- as.data.frame(round(object$cluster_probabilities, 3))
       out$cluster_probabilities <- cbind(seq_len(nrow(out$cluster_probabilities)), out$cluster_probabilities)
       out$node_allocations <- data.frame(colnames(object$parameters), object$cluster_allocations_mean)
       out$node_allocations <- cbind(out$node_allocations, object$cluster_allocations_mode)
