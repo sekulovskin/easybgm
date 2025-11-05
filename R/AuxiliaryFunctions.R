@@ -336,3 +336,70 @@ clusterBayesfactor <- function(fit,
   return(round(bayesFactor, 1))
 }
 
+
+# function for calculating the SE for the inclusion BFs
+
+BF_MCSE <- function(gamma_mat,
+                    prior_odds,
+                    ess = NULL,
+                    smooth_bf = FALSE,
+                    min_ess = 1) {
+
+  T_samples <- nrow(gamma_mat)
+
+  # Compute raw posterior inclusion probabilities
+  p_raw <- apply(gamma_mat, 2, mean)
+
+  # Determine p_hat for BF calculation
+  if (smooth_bf) {
+    pseudo <- c(0.5, 0.5)
+    a <- pseudo[1]
+    b <- if (length(pseudo) > 1) pseudo[2] else pseudo[1]
+    p_for_bf <- (colSums(gamma_mat) + a) / (T_samples + a + b)
+  } else {
+    p_for_bf <- p_raw
+  }
+
+  # Compute Bayes factors
+  post_odds <- p_for_bf / (1 - p_for_bf)
+  BF_vec <- post_odds / prior_odds
+
+  # Compute effective sample size
+  if(is.null(ess)){
+    ess_vec <- apply(gamma_mat, 2, function(x) {
+      ess <- as.numeric(coda::effectiveSize(x))
+      # Handle invalid ESS values
+      if (is.na(ess) || !is.finite(ess) || ess <= 0) {
+        return(min_ess)
+      }
+      return(ess)
+    })
+  } else {
+    ess_vec <- ess
+  }
+
+  if (smooth_bf) {
+    a <- pseudo[1]
+    b <- if (length(pseudo) > 1) pseudo[2] else pseudo[1]
+    p_for_variance <- (colSums(gamma_mat) + a) / (T_samples + a + b)
+  } else {
+    p_for_variance <- p_raw
+  }
+
+  # Variance of p_hat
+  var_p <- p_for_variance * (1 - p_for_variance) / ess_vec
+
+  # Delta method to BF scale
+  denom <- p_for_variance^2 * (1 - p_for_variance)^2
+
+  var_logBF <- var_p / denom
+  se_logBF <-sqrt(var_logBF)
+  se_BF <- BF_vec * se_logBF
+
+  # Set MCSE to NA only where calculations are invalid (not just inf)
+  se_BF[!is.finite(se_BF)] <- NA_real_
+  se_logBF[!is.finite(se_logBF)] <- NA_real_
+
+  return(MCSE = se_logBF)
+}
+

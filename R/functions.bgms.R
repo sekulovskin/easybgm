@@ -89,11 +89,14 @@ bgm_extract.package_bgms <- function(fit, type, save,
     if (args$edge_selection) {
       bgms_res$inc_probs <- extract_posterior_inclusion_probabilities(fit)
       if (args$edge_prior[1] == "Bernoulli") {
+        prior_odds <- edge.prior / (1 - edge.prior)
       bgms_res$inc_BF <- (bgms_res$inc_probs / (1 - bgms_res$inc_probs)) /
-        (edge.prior / (1 - edge.prior))
+        prior_odds
       } else {
+        prior_odds <- (args$beta_bernoulli_alpha) /
+          args$beta_bernoulli_beta
         bgms_res$inc_BF <- (bgms_res$inc_probs / (1 - bgms_res$inc_probs)) /
-          (args$beta_bernoulli_alpha / args$beta_bernoulli_beta)
+          prior_odds
       } # this is both for the BB and SBM (however, when the SBM has
       # within and between beta hyperparameters, this needs to be adjusted
       bgms_res$structure <- 1 * (bgms_res$inc_probs > 0.5)
@@ -123,10 +126,17 @@ bgm_extract.package_bgms <- function(fit, type, save,
       bgms_res$structure_probabilities <- table_structures[, 2] / nrow(gammas)
       bgms_res$graph_weights <- table_structures[, 2]
       bgms_res$sample_graph <- as.character(table_structures[, 1])
+
+      # ---Compute the MCSE for the inclusion BFs
+      bgms_res$MCSE_BF <- BF_MCSE(gamma_mat = extract_indicators(fit),
+                                            prior_odds = prior_odds,
+                                            ess = fit$posterior_summary_indicator$n_eff,
+                                            smooth_bf = FALSE)
+
     }
   }
   if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") > "0.1.6") {
-    bgms_res$sbm <- extract_sbm(fit)
+    bgms_res$sbm <- extract_sbm(fit)  # should we move this up? within the edge_selection condition?
   }
   # --- Optionally compute centrality ---
   if (centrality) {

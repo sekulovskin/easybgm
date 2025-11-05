@@ -37,11 +37,11 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
     names_bycol <- matrix(rep(names, each = p), ncol = p)
     names_byrow <- matrix(rep(names, each = p), ncol = p, byrow = T)
     names_comb <- matrix(paste0(names_byrow, "-", names_bycol), ncol = p)
-    mat_names <- names_comb[upper.tri(names_comb)]
+    mat_names <- names_comb[lower.tri(names_comb)]
 
     ## ---- 2b. Extract inclusion probabilities and Bayes Factors ----
-    inc_probs  <- round(object$inc_probs, 3)[upper.tri(object$inc_probs)]
-    BF <- round(object$inc_BF, 3)[upper.tri(object$inc_BF)]
+    inc_probs  <- round(object$inc_probs, 3)[lower.tri(object$inc_probs)]
+    BF <- round(object$inc_BF, 3)[lower.tri(object$inc_BF)]
 
     ## ---- 2c. Classify edges based on Bayes Factor ----(i.e., included, excluded, inconclusive)
     category <- character(length(BF))
@@ -70,9 +70,9 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
     names_bycol <- matrix(rep(names, each = p), ncol = p)
     names_byrow <- matrix(rep(names, each = p), ncol = p, byrow = T)
     names_comb <- matrix(paste0(names_byrow, "-", names_bycol), ncol = p)
-    mat_names <- names_comb[upper.tri(names_comb)]
+    mat_names <- names_comb[lower.tri(names_comb)]
 
-    parameter_values <- round(object$parameters, 3)[upper.tri(object$parameters)]
+    parameter_values <- round(object$parameters, 3)[lower.tri(object$parameters)]
 
 
     results <-
@@ -90,12 +90,12 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
     names_bycol <- matrix(rep(names, each = p), ncol = p)
     names_byrow <- matrix(rep(names, each = p), ncol = p, byrow = T)
     names_comb <- matrix(paste0(names_byrow, "-", names_bycol), ncol = p)
-    mat_names <- names_comb[upper.tri(names_comb)]
+    mat_names <- names_comb[lower.tri(names_comb)]
 
     ## ---- 2g. Extract and round relevant values ----
-    parameter_values <- round(object$parameters, 3)[upper.tri(object$parameters)]
-    inc_probs  <- round(object$inc_probs, 3)[upper.tri(object$inc_probs)]
-    BF <- round(object$inc_BF, 3)[upper.tri(object$inc_BF)]
+    parameter_values <- round(object$parameters, 3)[lower.tri(object$parameters)]
+    inc_probs  <- round(object$inc_probs, 3)[lower.tri(object$inc_probs)]
+    BF <- round(object$inc_BF, 3)[lower.tri(object$inc_BF)]
 
     ## ---- 2h. Classify edges ---- (i.e., included, excluded, inconclusive)
     category <- character(length(BF))
@@ -113,7 +113,8 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
           inc_probs =  inc_probs,
           BF = BF,
           category = category,
-          convergence = round(object$convergence_parameter, 3)
+          convergence = round(object$convergence_parameter, 3),
+          BF_SE <- round(object$MCSE_BF, 3)
         )
       colnames(results) <- c(
         "Relation",
@@ -121,7 +122,8 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
         "Posterior Incl. Prob.",
         "Inclusion BF",
         "Category",
-        "Convergence")
+        "R-hat",
+        "MCSE")
     } else {
       ## ----  Create results data frame without convergence----
       results <-
@@ -286,10 +288,21 @@ print.easybgm <- function(x, ...){
         "\n Bayes factors were obtained using Bayesian model-averaging.",
         "\n ")
     if("package_bgms" %in% class(x) && packageVersion("bgms") > "0.1.4.2"){
-      cat("\n Convergence indicates the R-hat (Gelman–Rubin) statistic measuring how well MCMC chains have converged to",
-          "\n the same target distribution, and values greater than about 1.01–1.05 are considered concerning, indicating",
-          "\n potential lack of convergence for the estimates of the pairwise interactions. ",
-          "\n ---")
+      cat(
+        "\n Convergence diagnostics: The R-hat (Gelman–Rubin) statistic measures how well MCMC chains have",
+        "\n converged to the same target distribution, and values greater than about 1.01–1.05 are considered",
+        "\n concerning, indicating potential lack of convergence for the estimates of the pairwise interactions.",
+        "\n The MCSE indicates the numerical standard error of the inclusion Bayes factor estimates; that is,",
+        "\n the standard error of the Bayes factor due to finite, autocorrelated MCMC sampling. The MCSE is",
+        "\n calculated on the log scale for numerical stability, as Bayes factors can span many orders of",
+        "\n magnitude and the log transformation prevents artificial inflation of the standard error.",
+        "\n Values close to zero indicate precise estimation of the inclusion Bayes factors. Note, when the posterior",
+        "\n inclusion probability is exactly 1 or 0, that means there is overwhelming evidence in favor of the",
+        "\n inclusion or exclusion of the edge, the BF has an undefined (Inf) value, and the MCSE is not available",
+        "\n in these cases.",
+        "\n ---",
+        sep = ""
+      )
     }
     cat("\n AGGREGATED EDGE OVERVIEW",
         "\n Number of edges with sufficient evidence for inclusion:", x$n_inclu_edges,
