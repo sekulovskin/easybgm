@@ -114,7 +114,7 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
           BF = BF,
           category = category,
           convergence = round(object$convergence_parameter, 3),
-          BF_SE <- round(object$MCSE_BF, 3)
+          BF_SE <- ifelse(is.na(object$MCSE_BF), "", round(object$MCSE_BF, 3))
         )
       colnames(results) <- c(
         "Relation",
@@ -122,8 +122,8 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
         "Posterior Incl. Prob.",
         "Inclusion BF",
         "Category",
-        "R-hat",
-        "MCSE")
+        "Convergence Estimate",
+        "Convergence log(BF)")
     } else {
       ## ----  Create results data frame without convergence----
       results <-
@@ -289,17 +289,13 @@ print.easybgm <- function(x, ...){
         "\n ")
     if("package_bgms" %in% class(x) && packageVersion("bgms") > "0.1.4.2"){
       cat(
-        "\n Convergence diagnostics: The R-hat (Gelman–Rubin) statistic measures how well MCMC chains have",
-        "\n converged to the same target distribution, and values greater than about 1.01–1.05 are considered",
-        "\n concerning, indicating potential lack of convergence for the estimates of the pairwise interactions.",
-        "\n The MCSE indicates the numerical standard error of the inclusion Bayes factor estimates; that is,",
-        "\n the standard error of the Bayes factor due to finite, autocorrelated MCMC sampling. The MCSE is",
-        "\n calculated on the log scale for numerical stability, as Bayes factors can span many orders of",
-        "\n magnitude and the log transformation prevents artificial inflation of the standard error.",
-        "\n Values close to zero indicate precise estimation of the inclusion Bayes factors. Note, when the posterior",
-        "\n inclusion probability is exactly 1 or 0, that means there is overwhelming evidence in favor of the",
-        "\n inclusion or exclusion of the edge, the BF has an undefined (Inf) value, and the MCSE is not available",
-        "\n in these cases.",
+        "\n Convergence diagnostics: The 'Convergence Parameter' is the R-hat (Gelman–Rubin) statistic, which measures how well MCMC chains have",
+        "\n converged to the same target distribution for the parameter weights. Values greater than about 1.01–1.05 are considered concerning,",
+        "\n indicating potential lack of convergence for the estimates of the pairwise interactions.",
+        "\n The 'Convergence log(BF)' indicates the numerical standard error of the inclusion Bayes factor estimates. These values quantify",
+        "\n Monte Carlo uncertainty on a proportional (log) scale, making them directly comparable across edges regardless of the magnitude of the",
+        "\n Bayes factor. Smaller MCSE values indicate precise estimation of the inclusion Bayes factors. Note that when the posterior inclusion",
+        "\n probability is exactly 1 or 0, the Bayes factor has an undefined (Inf) value, and the MCSE is not available.",
         "\n ---",
         sep = ""
       )

@@ -338,7 +338,6 @@ clusterBayesfactor <- function(fit,
 
 
 # function for calculating the SE for the inclusion BFs
-
 BF_MCSE <- function(gamma_mat,
                     prior_odds,
                     ess = NULL,
