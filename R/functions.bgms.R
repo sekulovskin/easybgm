@@ -41,8 +41,6 @@ bgm_fit.package_bgms <- function(fit, type, data, iter, save,
 }
 
 
-
-
 # --------------------------------------------------------------------------------------------------
 # 2. Extracting results function
 # --------------------------------------------------------------------------------------------------
@@ -136,12 +134,6 @@ bgm_extract.package_bgms <- function(fit, type, save,
     }
   }
 
-  # ---Compute the MCSE for the inclusion BFs
-  bgms_res$MCSE_BF <- BF_MCSE(gamma_mat = extract_indicators(fit),
-                              prior_odds = prior_odds,
-                              ess = fit$posterior_summary_indicator$n_eff,
-                              smooth_bf = FALSE)
-
   # --- Extract SBM results ---
   if (args$edge_prior[1] == "Stochastic-Block" && packageVersion("bgms") > "0.1.6") {
     bgms_res$sbm <- extract_sbm(fit)  # should we move this up? within the edge_selection condition?
@@ -152,7 +144,14 @@ bgm_extract.package_bgms <- function(fit, type, save,
   }
   # --- For newer version compute convergence ---
   if (packageVersion("bgms") > "0.1.4.2") {
+    # extract the Rhat
     bgms_res$convergence_parameter <-  fit$posterior_summary_pairwise$Rhat
+    # calculate MCSE for the inclusion BF
+    bgms_res$MCSE_BF <-BF_MCSE(gamma_mat = extract_indicators(fit),
+                                BF_vec = bgms_res$inc_BF[lower.tri(bgms_res$inc_BF)],
+                                ess = fit$posterior_summary_indicator$n_eff,
+                                return = "ci", #"mcse_log", "mcse_bf", "ci"
+                                smooth_bf = FALSE)
   }
   # --- Finalize output ---
   colnames(bgms_res$inc_probs) <- colnames(bgms_res$parameters)

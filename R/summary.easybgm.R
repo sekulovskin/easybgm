@@ -114,8 +114,16 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
           BF = BF,
           category = category,
           convergence = round(object$convergence_parameter, 3),
-          BF_SE <- ifelse(is.na(object$MCSE_BF), "", round(object$MCSE_BF, 3))
-        )
+          MCSE_2.5 = ifelse(
+            is.na(object$MCSE_BF[, 1]),
+            "",
+            round(object$MCSE_BF[, 1], 3)
+          ),
+          MCSE_97.5 = ifelse(
+            is.na(object$MCSE_BF[, 2]),
+            "",
+            round(object$MCSE_BF[, 2], 3)
+          ))
       colnames(results) <- c(
         "Relation",
         "Estimate",
@@ -123,7 +131,8 @@ summary.easybgm <- function(object, evidence_thresh = 10, ...) {
         "Inclusion BF",
         "Category",
         "Convergence Estimate",
-        "Convergence log(BF)")
+        "BF (MC Lower 2.5%)",
+        "BF (MC Upper 97.5%)")
     } else {
       ## ----  Create results data frame without convergence----
       results <-
@@ -289,13 +298,14 @@ print.easybgm <- function(x, ...){
         "\n ")
     if("package_bgms" %in% class(x) && packageVersion("bgms") > "0.1.4.2"){
       cat(
-        "\n Convergence diagnostics: The 'Convergence Parameter' is the R-hat (Gelman–Rubin) statistic, which measures how well MCMC chains have",
-        "\n converged to the same target distribution for the parameter weights. Values greater than about 1.01–1.05 are considered concerning,",
+        "\n Convergence diagnostics: The 'Convergence Estimate' is the R-hat (Gelman–Rubin) statistic, which measures how well MCMC chains have",
+        "\n converged to the same target distribution for the edge weights. Values greater than about 1.01–1.05 are considered concerning,",
         "\n indicating potential lack of convergence for the estimates of the pairwise interactions.",
-        "\n The 'Convergence log(BF)' indicates the numerical standard error of the inclusion Bayes factor estimates. These values quantify",
-        "\n Monte Carlo uncertainty on a proportional (log) scale, making them directly comparable across edges regardless of the magnitude of the",
-        "\n Bayes factor. Smaller MCSE values indicate precise estimation of the inclusion Bayes factors. Note that when the posterior inclusion",
-        "\n probability is exactly 1 or 0, the Bayes factor has an undefined (Inf) value, and the MCSE is not available.",
+        "\n The 'BF Interval (MC)' is a 95% Monte Carlo confidence interval for the Bayes factor, obtained by first estimating the numerical standard",
+        "\n error of the log Bayes factor and then exponentiating a log-scale interval back to the BF scale. This interval reflects the numerical",
+        "\n Monte Carlo uncertainty of the Bayes factor; narrower intervals indicate a more stable and reliable BF estimate across repeated MCMC",
+        "\n runs. Note that when the posterior inclusion probability is exactly 1 or 0, the Bayes factor is infinite and the Monte Carlo interval",
+        "\n is not available.",
         "\n ---",
         sep = ""
       )

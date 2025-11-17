@@ -339,10 +339,14 @@ clusterBayesfactor <- function(fit,
 
 # function for calculating the SE for the inclusion BFs
 BF_MCSE <- function(gamma_mat,
-                    prior_odds,
+                    BF_vec,
                     ess = NULL,
                     smooth_bf = FALSE,
-                    min_ess = 1) {
+                    return = c("mcse_log", "mcse_bf", "ci"),
+                    conf_level = 0.95) {
+
+  # Match argument
+  return <- match.arg(return)
 
   T_samples <- nrow(gamma_mat)
 
@@ -360,11 +364,12 @@ BF_MCSE <- function(gamma_mat,
   }
 
   # Compute Bayes factors
-  post_odds <- p_for_bf / (1 - p_for_bf)
-  BF_vec <- post_odds / prior_odds
+  #post_odds <- p_for_bf / (1 - p_for_bf)
+  #BF_vec <- post_odds / prior_odds
+  #BF_vec <- BF_vec[lower.tri(BF_vec)]
 
   # Compute effective sample size
-  if(is.null(ess)){
+  if (is.null(ess)) {
     ess_vec <- apply(gamma_mat, 2, function(x) {
       ess <- as.numeric(coda::effectiveSize(x))
       # Handle invalid ESS values
@@ -388,17 +393,44 @@ BF_MCSE <- function(gamma_mat,
   # Variance of p_hat
   var_p <- p_for_variance * (1 - p_for_variance) / ess_vec
 
-  # Delta method to BF scale
+  # Delta method to log BF scale
   denom <- p_for_variance^2 * (1 - p_for_variance)^2
-
   var_logBF <- var_p / denom
-  se_logBF <-sqrt(var_logBF)
-  se_BF <- BF_vec * se_logBF
+  se_logBF <- sqrt(var_logBF)
 
-  # Set MCSE to NA only where calculations are invalid (not just inf)
-  se_BF[!is.finite(se_BF)] <- NA_real_
+  # Set MCSE to NA where calculations are invalid
   se_logBF[!is.finite(se_logBF)] <- NA_real_
 
-  return(MCSE = se_logBF)
-}
+  # Return based on argument
+  if (return == "mcse_log") {
+    # Return MCSE on log scale
+    return(se_logBF)
 
+  } else if (return == "mcse_bf") {
+    # Return MCSE on BF scale
+    se_BF <- BF_vec * se_logBF
+    se_BF[!is.finite(se_BF)] <- NA_real_
+
+    return(se_BF)
+
+  } else if (return == "ci") {
+    # Return confidence intervals as data frame
+    z <- qnorm(1 - (1 - conf_level) / 2)
+
+    # Compute CI on log scale, then exponentiate
+    log_BF <- log(BF_vec)
+    ci_lower <- exp(log_BF - z * se_logBF)
+    ci_upper <- exp(log_BF + z * se_logBF)
+
+    # Set CI to NA where BF or MCSE is invalid
+    ci_lower[!is.finite(BF_vec) | is.na(se_logBF)] <- NA_real_
+    ci_upper[!is.finite(BF_vec) | is.na(se_logBF)] <- NA_real_
+
+    # Return as data frame with two columns
+    ci_df <- data.frame(
+      lower = ci_lower,
+      upper = ci_upper
+    )
+    return(ci_df)
+  }
+}
